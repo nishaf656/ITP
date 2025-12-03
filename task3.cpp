@@ -1,112 +1,112 @@
 #include <iostream>
 #include <vector>
-#include <cstdlib>
-#include <ctime>
-#include <iomanip>
+#include <array>
+#include <sstream>
+#include <string>
+#include <cctype>
 using namespace std;
 
+// storage for history
+vector<array<int,4>> logBook;
+// converts int code to char symbol
+char toSymbol(int code) {
+    return static_cast<char>(code);
+}
+// prints help message
+void printHelp() {
+    cout << "\nUsage:\n  <operator> <num1> <num2>\n\n"
+         << "Description:\n  Perform basic arithmetic operations or run utility commands.\n\n"
+         << "Operators: +  -  *  /\n\n"
+         << "Commands:\n"
+         << "  history  -> show all calculations\n"
+         << "  help     -> show this help message\n"
+         << "  quit     -> exit the program\n";
+}
+// checks if string is a valid int num
+bool isNumberSafe(const string &s) {
+    if (s.empty()) return false;
+    int i = 0;
+    if (s[0] == '+' || s[0] == '-') i++;
+    if (i == s.size()) return false;
+    for (; i < s.size(); i++) {
+        if (!isdigit(s[i])) return false;
+    }
+    return true;
+}
 
 int main() {
-    srand(time(0));
+    cout << "Simple Command-Line Calculator\nType 'help' for a list of commands.\n";
+    string line;
 
-    int width, height, initialinf, days;
-    double p_infect, p_worsen;
-
-    cout << "Enter grid width and height: ";
-    cin >> width >> height;
-    cout << "Enter initial number of infected individuals: ";
-    cin >> initialinf;
-    cout << "Enter infection probability (0..1): ";
-    cin >> p_infect;
-    cout << "Enter worsening probability (0..1): ";
-    cin >> p_worsen;
-    cout << "Enter number of days: ";
-    cin >> days;
-    vector<vector<int>> grid(height, vector<int>(width, 0));
-
-    for (int i = 0; i < initialinf; i++) {
-        int r = rand() % height;
-        int c = rand() % width;
-        grid[r][c] = 1 + rand() % 3; 
-    }
-
-    cout << "\nInitial grid state:\n";
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            int cell = grid[i][j];
-            if (cell == 0) cout << ".";
-            else if (cell >= 1 && cell <= 9) cout << cell;
-            else if (cell == 10) cout << "R";
-            else if (cell == 11) cout << "X";
+    while (true) {
+        cout << "\n> ";
+        getline(cin, line);
+        if (line.empty()) continue;
+// process commands
+        if (line == "help") {
+            cout << "\nUsage:\n  <operator> <num1> <num2>\n"
+                 << "\nDescription:\n  Perform basic arithmetic operations or run utility commands.\n"
+                 << "\nOperators: +  -  *  /\n"
+                 << "\nExample: + 5 3 -> 8\n"
+                 << "\nCommands:\n"
+                 << "  history -> show history of all previous operations\n"
+                 << "  help    -> display this help message\n"
+                 << "  quit    -> exit the program\n";
+            continue;
         }
-        cout << '\n';
-    }
-
-    for (int day = 1; day <= days; day++) {
-        vector<vector<int>> next = grid;
-        int healthy = 0, infected = 0, recovered = 0, dead = 0;
-
-        for (int r = 0; r < height; r++) {
-            for (int c = 0; c < width; c++) {
-                int state = grid[r][c];
-                if (state == 0) {
-                    bool neighborInfected = false;
-                    for (int dr = -1; dr <= 1; dr++) {
-                        for (int dc = -1; dc <= 1; dc++) {
-                            if (dr == 0 && dc == 0) continue;
-                            int nr = r + dr;
-                            int nc = c + dc;
-                            if (nr >= 0 && nr < height && nc >= 0 && nc < width) {
-                                if (grid[nr][nc] >= 1 && grid[nr][nc] <= 9)
-                                    neighborInfected = true;
-                            }
-                        }
-                    }
-                    if (neighborInfected && ((double)rand() / RAND_MAX) < p_infect) {
-                        next[r][c] = 1;
-                    }
+// show history
+        if (line == "history") {
+            if (logBook.empty()) {
+                cout << "\nNo history yet.\n";
+            } else {
+                cout << "\n";
+                for (auto &rec : logBook) {
+                    cout << rec[0] << " " << toSymbol(rec[1]) << " " 
+                         << rec[2] << " = " << rec[3] << "\n";
                 }
-
-                else if (state >= 1 && state <= 9) {
-                    double roll = (double)rand() / RAND_MAX;
-                    if (roll < p_worsen / 3.0) {
-                        next[r][c] = min(9, state + 1); 
-                    } 
-                    else if (roll < 0.5) {
-                        next[r][c] = 10; 
-                    } 
-                    else if (roll > 0.9) {
-                        next[r][c] = 11; 
-                    }
-                }
-
-                int newState = next[r][c];
-                if (newState == 0) healthy++;
-                else if (newState >= 1 && newState <= 9) infected++;
-                else if (newState == 10) recovered++;
-                else if (newState == 11) dead++;
             }
+            continue;
+        }
+// exit program
+        if (line == "quit") {
+            cout << "Exiting Calculator.";
+            break;
+        }
+// for arithmetic
+        stringstream cut(line);
+        string a, b;
+        char sgn;
+        cut >> sgn >> a >> b;
+// validate input
+        if (!cut || (sgn != '+' && sgn != '-' && sgn != '*' && sgn != '/')) {
+            cout << "Error: Invalid input.";
+            continue;
+        }
+// validate numbers
+        if (!isNumberSafe(a) || !isNumberSafe(b)) {
+            cout << "Error: Invalid number.";
+            continue;
+        }
+// perform calc
+        int x = stoi(a);
+        int y = stoi(b);
+        int val = 0;
+
+        if (sgn == '/' && y == 0) {
+            cout << "Error: Division by zero.";
+            logBook.push_back({x, (int)sgn, y, 0});
+            continue;
         }
 
-        grid = next;
-
-        cout << "Day " << setw(2) << day
-             << ": Healthy: " << healthy
-             << ", Infected: " << infected
-             << ", Recovered: " << recovered
-             << ", Dead: " << dead << '\n';
-    }
-
-    cout << "\nFinal grid state:\n";
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            int cell = grid[i][j];
-            if (cell == 0) cout << ".";
-            else if (cell >= 1 && cell <= 9) cout << cell;
-            else if (cell == 10) cout << "R";
-            else if (cell == 11) cout << "X";
+        switch (sgn) {
+            case '+': val = x + y; break;
+            case '-': val = x - y; break;
+            case '*': val = x * y; break;
+            case '/': val = x / y; break;
         }
-        cout << '\n';
+// output result & log
+        cout << val;
+        logBook.push_back({x, (int)sgn, y, val});
     }
 
     return 0;
