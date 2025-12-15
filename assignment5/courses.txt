@@ -1,0 +1,7 @@
+CSE141A , Introduction to Programming ,5,90
+
+CSE142 ,Object Oriented Programming Techniques ,5,90
+ CSE141A
+CSE143 ,Design and Analysis of Algorithms ,5,90
+ CSE141A;CSE142
+,Design and Analysis of Algorithms ,5,90
